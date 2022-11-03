@@ -1,0 +1,78 @@
+ {% if paginate.pages > 1 %}
+            <div class="paginationContainer"{% if section.settings.paginateType == 'infinity' %} style="height: 0;overflow: hidden;"{% endif %}>
+                <input type="hidden" value="{{ paginate.pages }}">
+                {% if section.settings.paginateType == 'infinity' or section.settings.paginateType == 'loadMore' %}
+                    <span data-current="2" class="page loadMoreButton">Load More</span>
+                {% else %}
+                    {{ paginate | default_pagination }}
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        {
+            "type": "select",
+            "id": "paginateType",
+            "label": "Paginate Type",
+            "options": [
+                {
+                    "value": "paginate",
+                    "label": "Paginate"
+                },
+                {
+                    "value": "loadMore",
+                    "label": "Load More"
+                },
+                {
+                    "value": "infinity",
+                    "label": "Infinity"
+                }
+            ]
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        {% if section.settings.paginateType == 'infinity' or section.settings.paginateType == 'loadMore' %}
+    <script type="text/javascript">
+        const loadMoreButton = document.querySelector('.loadMoreButton')
+        if(loadMoreButton) {
+            loadMoreButton.addEventListener('click', async function() {
+                if(this.classList.contains('disbled') || this.classList.contains('loadingContent')) return;
+
+                this.classList.add('loadingContent');
+
+                const pages = parseInt(this.closest('.paginationContainer').querySelector('input').value);
+                const current = parseInt(this.dataset.current);
+                const req = await fetch(`{{ request.path }}?page=${ current }`);
+                const res = await req.text();
+
+                const resText = new DOMParser();
+                const Doc = resText.parseFromString(res, 'text/html');
+                document.getElementById('cardContainer').innerHTML = document.getElementById('cardContainer').innerHTML + Doc.getElementById('cardContainer').innerHTML
+
+                this.classList.remove('loadingContent');
+
+                if(pages == current) {
+                    this.style.display = 'none';
+                    this.classList.add('disbled');
+                } else {
+                    this.dataset.current = current + 1;
+                }
+            })
+        }
+
+        {% if section.settings.paginateType == 'infinity' %}
+            window.addEventListener('scroll', function() {
+                if((window.innerHeight + window.scrollY) > loadMoreButton.offsetTop) {
+                    loadMoreButton.click();
+                };
+            })
+        {% endif %}
+    </script>
+{% endif %}
+        
