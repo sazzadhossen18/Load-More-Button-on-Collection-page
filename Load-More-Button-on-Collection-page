@@ -1,78 +1,73 @@
- {% if paginate.pages > 1 %}
-            <div class="paginationContainer"{% if section.settings.paginateType == 'infinity' %} style="height: 0;overflow: hidden;"{% endif %}>
-                <input type="hidden" value="{{ paginate.pages }}">
-                {% if section.settings.paginateType == 'infinity' or section.settings.paginateType == 'loadMore' %}
-                    <span data-current="2" class="page loadMoreButton">Load More</span>
-                {% else %}
-                    {{ paginate | default_pagination }}
-                {% endif %}
-            </div>
-        {% endif %}
-        
-        {
-            "type": "select",
-            "id": "paginateType",
-            "label": "Paginate Type",
-            "options": [
-                {
-                    "value": "paginate",
-                    "label": "Paginate"
-                },
-                {
-                    "value": "loadMore",
-                    "label": "Load More"
-                },
-                {
-                    "value": "infinity",
-                    "label": "Infinity"
-                }
-            ]
+ {%- if paginate.pages > 1 -%}
+      <input type="hidden" value="{{ paginate.next.url }}" data-next-link>
+      <input type="hidden" value="{{ paginate.pages }}" data-all-pages>
+      <input type="hidden" value="{{ paginate.current_page }}" data-this-page>
+      <input type="hidden" value="{{ collection.url }}" data-coll-url>
+      <div class="load-more_wrap">
+        <button class="btn js-load-more btn--primary hero__btn">
+          <span load-more-text>Load More</span>
+          <span class="hide" loader>
+            <img src="{{ 'loader.gif' | asset_url }}">
+          </span>
+        </button>
+      </div>
+    {%- endif -%}
+
+<style>
+    .load-more_wrap {
+        padding: 40px 0px;
+        text-align: center;
+    }
+    button.btn.js-load-more.btn--primary.hero__btn {
+      background: #222;
+      color: #fff;
+  }
+.load-more_wrap img{
+  max-width: 25px;
+  }
+        div.pagination{
+         display: none !important;
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        {% if section.settings.paginateType == 'infinity' or section.settings.paginateType == 'loadMore' %}
-    <script type="text/javascript">
-        const loadMoreButton = document.querySelector('.loadMoreButton')
-        if(loadMoreButton) {
-            loadMoreButton.addEventListener('click', async function() {
-                if(this.classList.contains('disbled') || this.classList.contains('loadingContent')) return;
+      .hide{
+        display:none;
+      }
+</style>
 
-                this.classList.add('loadingContent');
 
-                const pages = parseInt(this.closest('.paginationContainer').querySelector('input').value);
-                const current = parseInt(this.dataset.current);
-                const req = await fetch(`{{ request.path }}?page=${ current }`);
-                const res = await req.text();
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+  $('.js-load-more').on('click', function(){
+   var $this =$(this),
+   totalPages = parseInt($('[data-all-pages]').val()),
+   currentPage = parseInt($('[data-this-page]').val()),
+   datacollurl = $('[data-coll-url]').val();;
+   $this.attr('disabled', true);
+   $this.find('[load-more-text]').addClass('hide');
+   $this.find('[loader]').removeClass('hide');
+   var nextUrl = $('[data-next-link]').val();
+   var current_page_new = currentPage + 1;
+   var next_coll = currentPage + 2;
+   //alert(current_page_new)
+   //return false;
+   $.ajax({
+   url: nextUrl,
+   type: 'GET',
+   dataType: 'html',
+   success: function(responseHTML){
+   $('[data-next-link]').val(datacollurl + "?page="+next_coll);
+   $('[data-this-page]').val(current_page_new);
+   $('.grid-loader').append($(responseHTML).find('.grid-loader').html());
+   },
+   complete: function() {
+   if(current_page_new < totalPages) {
+   $this.attr('disabled', false); $this.find('[load-more-text]').removeClass('hide'); $this.find('[loader]').addClass('hide');
+   }
+   if(current_page_new >= totalPages) {
+   $this.find('[load-more-text]').text('No More Products Left').removeClass('hide'); $this.find('[loader]').addClass('hide');
+   }
+   }
+   })
+  });
+</script>
 
-                const resText = new DOMParser();
-                const Doc = resText.parseFromString(res, 'text/html');
-                document.getElementById('cardContainer').innerHTML = document.getElementById('cardContainer').innerHTML + Doc.getElementById('cardContainer').innerHTML
 
-                this.classList.remove('loadingContent');
-
-                if(pages == current) {
-                    this.style.display = 'none';
-                    this.classList.add('disbled');
-                } else {
-                    this.dataset.current = current + 1;
-                }
-            })
-        }
-
-        {% if section.settings.paginateType == 'infinity' %}
-            window.addEventListener('scroll', function() {
-                if((window.innerHeight + window.scrollY) > loadMoreButton.offsetTop) {
-                    loadMoreButton.click();
-                };
-            })
-        {% endif %}
-    </script>
-{% endif %}
-        
